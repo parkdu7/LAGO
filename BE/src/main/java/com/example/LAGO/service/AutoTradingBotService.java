@@ -100,7 +100,7 @@ public class AutoTradingBotService {
                     technical != null ? technical.getMacdLine() : "N/A");
             
             // 4. 각 봇별 매매 실행 (병렬 처리)
-            activeBots.parallelStream().forEach(bot -> {
+            activeBots.stream().forEach(bot -> {
                 try {
                     executeTradeForBot(bot, sentimentScore, technical);
                 } catch (Exception e) {

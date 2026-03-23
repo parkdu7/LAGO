@@ -156,6 +156,9 @@ docker-compose.override.yml
 # Gemini
 .gemini/
 
+# Progress tracking
+PROGRESS.md
+
 # properties
 .properties
 *.properties

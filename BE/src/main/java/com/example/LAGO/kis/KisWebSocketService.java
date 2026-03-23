@@ -103,7 +103,10 @@ public class KisWebSocketService {
     
     /**
      * STOCK_INFO 테이블에서 모든 주식 종목을 조회하여 자동으로 WebSocket 구독
+     * @deprecated KisRealtimeBootstrap에서 WatchList 기반 선택적 구독으로 대체됨.
+     *             전체 종목 구독은 WS 용량(40개) 초과 및 리소스 낭비 위험.
      */
+    @Deprecated
     public List<String> addAllStocksFromDatabase() {
         try {
             // DB에서 모든 주식 정보 조회

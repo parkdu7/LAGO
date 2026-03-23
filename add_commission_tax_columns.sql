@@ -1,4 +1,0 @@
--- MOCK_TRADE 테이블에 commission과 tax 컬럼 추가
-ALTER TABLE "MOCK_TRADE" 
-ADD COLUMN IF NOT EXISTS commission INTEGER,
-ADD COLUMN IF NOT EXISTS tax INTEGER;

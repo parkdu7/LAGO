@@ -21,7 +21,7 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(value = "app.price.simulator.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "app.price.simulator.enabled", havingValue = "true", matchIfMissing = false)
 public class PriceSimulatorService {
 
     private final JdbcTemplate jdbcTemplate;

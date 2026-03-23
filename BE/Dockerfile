@@ -12,4 +12,4 @@ COPY ../firebaseServiceAccountKey.json firebaseServiceAccountKey.json
 EXPOSE 8080
 
 # 5. 컨테이너 실행 시 명령
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=200", "-jar", "app.jar"]

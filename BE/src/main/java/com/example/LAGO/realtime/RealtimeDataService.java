@@ -58,6 +58,8 @@ public class RealtimeDataService {
     
     // 종목별 청크 관리 (메모리 캐시)
     private final Map<Integer, TickChunk> stockChunks = new ConcurrentHashMap<>();
+    private final Map<Integer, Long> chunkLastAccess = new ConcurrentHashMap<>();
+    private static final long CHUNK_TTL_MS = 5 * 60 * 1000L; // 5분 미접근 시 만료
     
     // Redis Key 패턴
     private static final String REALTIME_KEY_PREFIX = "realtime:stock:";  // 실시간 조회용
@@ -106,14 +108,15 @@ public class RealtimeDataService {
         }
         
         // 종목별 청크 가져오기 (없으면 생성)
-        TickChunk chunk = stockChunks.computeIfAbsent(stockId, 
+        TickChunk chunk = stockChunks.computeIfAbsent(stockId,
             k -> new TickChunk(CHUNK_SIZE));
-        
+        chunkLastAccess.put(stockId, System.currentTimeMillis());
+
         // 청크에 데이터 추가
         if (!chunk.add16B(tickData, stockId)) {
             // 청크가 가득 참 → Redis에 저장하고 새 청크 생성
             saveBatchToRedis(stockId, chunk);
-            
+
             // 새 청크 생성 후 데이터 추가
             chunk = new TickChunk(CHUNK_SIZE);
             chunk.add16B(tickData, stockId);
@@ -421,9 +424,32 @@ public class RealtimeDataService {
             }
             
             if (flushedCount > 0) {
-                log.info("🔄 Scheduled flush completed: {} chunks saved", flushedCount);
+                log.info("Scheduled flush completed: {} chunks saved", flushedCount);
             }
-            
+
+            // TTL 만료 청크 제거 (5분간 틱 미수신 종목)
+            long now = System.currentTimeMillis();
+            int evictedCount = 0;
+            var iterator = stockChunks.entrySet().iterator();
+            while (iterator.hasNext()) {
+                var entry = iterator.next();
+                Integer stockId = entry.getKey();
+                Long lastAccess = chunkLastAccess.getOrDefault(stockId, 0L);
+                if (now - lastAccess > CHUNK_TTL_MS) {
+                    TickChunk chunk = entry.getValue();
+                    if (!chunk.isEmpty()) {
+                        saveBatchToRedis(stockId, chunk);
+                    }
+                    iterator.remove();
+                    chunkLastAccess.remove(stockId);
+                    evictedCount++;
+                }
+            }
+            if (evictedCount > 0) {
+                log.info("TTL eviction: {} stale chunks removed, {} remaining",
+                    evictedCount, stockChunks.size());
+            }
+
         } catch (Exception e) {
             log.error("Failed to flush pending chunks: {}", e.getMessage(), e);
         }
