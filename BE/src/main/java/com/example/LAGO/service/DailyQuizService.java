@@ -83,7 +83,7 @@ public class DailyQuizService {
 
         DailySolved dailySolved = DailySolved.builder()
                 .solvedId(generateSolvedId())
-                .userId(userId)
+                .userId(userId.longValue())
                 .quizId(quizId)
                 .score(score)
                 .solvedAt(today)
@@ -171,7 +171,7 @@ public class DailyQuizService {
         } else {
             KnowTerm newKnowTerm = KnowTerm.builder()
                     .knowId(generateKnowId())
-                    .userId(userId)
+                    .userId(userId.longValue())
                     .termId(termId)
                     .correct(correct)
                     .build();

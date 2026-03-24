@@ -30,6 +30,7 @@ public class InvestmentTerm {
      * 투자 용어 고유 ID (PK)
      */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "term_id")
     private Integer termId;
 

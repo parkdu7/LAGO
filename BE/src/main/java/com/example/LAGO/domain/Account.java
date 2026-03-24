@@ -31,16 +31,16 @@ public class Account {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "balance", nullable = false)
+    @Column(name = "balance")
     private Integer balance;
 
-    @Column(name = "total_asset", nullable = false)
+    @Column(name = "total_asset")
     private Integer totalAsset;
 
-    @Column(name = "profit", nullable = false)
+    @Column(name = "profit")
     private Integer profit;
 
-    @Column(name = "profit_rate", nullable = false)
+    @Column(name = "profit_rate")
     private Double profitRate;
 
     @Column(name = "type", nullable = false)

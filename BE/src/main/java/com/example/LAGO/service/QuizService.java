@@ -148,7 +148,7 @@ public class QuizService {
         } else {
             KnowTerm newKnowTerm = KnowTerm.builder()
                     .knowId(generateKnowId())
-                    .userId(userId)
+                    .userId(userId.longValue())
                     .termId(termId)
                     .correct(correct)
                     .build();

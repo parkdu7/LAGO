@@ -1,7 +1,6 @@
 package com.example.LAGO.service;
 
 import com.example.LAGO.domain.Account;
-import com.example.LAGO.domain.Stock;
 import com.example.LAGO.domain.StockHolding;
 import com.example.LAGO.domain.StockInfo;
 import com.example.LAGO.domain.User;
@@ -9,7 +8,6 @@ import com.example.LAGO.dto.response.AccountCurrentStatusResponse;
 import com.example.LAGO.dto.response.StockHoldingResponse;
 import com.example.LAGO.repository.AccountRepository;
 import com.example.LAGO.repository.MockTradeRepository;
-import com.example.LAGO.repository.StockRepository;
 import com.example.LAGO.repository.StockHoldingRepository;
 import com.example.LAGO.repository.StockInfoRepository;
 import com.example.LAGO.repository.UserRepository;
@@ -32,7 +30,6 @@ public class PortfolioService {
 
     private final StockHoldingRepository stockHoldingRepository;
     private final AccountRepository accountRepository;
-    private final StockRepository stockRepository;
     private final MockTradeRepository mockTradeRepository;
     private final StockInfoRepository stockInfoRepository;
     private final UserRepository userRepository;
@@ -112,19 +109,20 @@ public class PortfolioService {
      * StockHolding을 StockHoldingResponse로 변환
      */
     private StockHoldingResponse convertToResponse(StockHolding holding) {
-        // 현재 주가 정보 조회
-        Stock stock = stockRepository.findById(holding.getStockCode())
+        // 현재 주가 정보 조회 (StockInfo 기반)
+        StockInfo stockInfo = stockInfoRepository.findByCode(holding.getStockCode())
                 .orElse(null);
-        
-        Integer currentPrice = stock != null ? stock.getCurrentPrice() : holding.getAveragePrice();
-        
+
+        Integer currentPrice = stockInfo != null && stockInfo.getCurrentPrice() != null
+                ? stockInfo.getCurrentPrice() : holding.getAveragePrice();
+
         // 현재 평가 금액 업데이트
         holding.updateCurrentValue(currentPrice);
-        
+
         return StockHoldingResponse.builder()
                 .holdingId(holding.getHoldingId())
                 .stockCode(holding.getStockCode())
-                .stockName(stock != null ? stock.getName() : "종목명 없음")
+                .stockName(stockInfo != null ? stockInfo.getName() : "종목명 없음")
                 .quantity(holding.getQuantity())
                 .averagePrice(holding.getAveragePrice())
                 .totalCost(holding.getTotalCost())
@@ -134,8 +132,8 @@ public class PortfolioService {
                 .profitLossRate(holding.getProfitLossRate())
                 .firstPurchaseDate(holding.getFirstPurchaseDate())
                 .lastTradeDate(holding.getLastTradeDate())
-                .market(stock != null ? stock.getMarket() : null)
-                .sector(stock != null ? stock.getSector() : null)
+                .market(stockInfo != null ? stockInfo.getMarket() : null)
+                .sector(stockInfo != null ? stockInfo.getSector() : null)
                 .build();
     }
 

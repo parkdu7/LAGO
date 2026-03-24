@@ -33,6 +33,7 @@ public class Quiz {
      * 퀴즈 고유 ID (PK)
      */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "quiz_id")
     private Integer quizId;
 

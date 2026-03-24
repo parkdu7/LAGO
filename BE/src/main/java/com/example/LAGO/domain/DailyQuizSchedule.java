@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class DailyQuizSchedule {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "schedule_id")
     private Integer scheduleId;
 

@@ -18,11 +18,12 @@ import java.time.LocalDate;
 public class DailySolved {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "solved_id")
     private Integer solvedId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "quiz_id", nullable = false)
     private Integer quizId;

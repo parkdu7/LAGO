@@ -22,6 +22,7 @@ import lombok.Builder;
 public class ChartPattern {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pattern_id")
     private Integer patternId;
 

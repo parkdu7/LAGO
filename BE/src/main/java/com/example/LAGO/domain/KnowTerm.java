@@ -17,11 +17,12 @@ import lombok.NoArgsConstructor;
 public class KnowTerm {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "know_id")
     private Integer knowId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "term_id", nullable = false)
     private Integer termId;

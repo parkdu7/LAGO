@@ -69,21 +69,19 @@ public class AssetUpdateScheduler {
                     ELSE 0
                 END
             FROM (
-                SELECT 
+                SELECT
                     mt.account_id,
                     SUM(
-                        CASE 
-                            WHEN mt.trade_type = 'BUY' THEN mt.quantity * COALESCE(s.current_price, mt.price)
+                        CASE
+                            WHEN mt.buy_sell = 'BUY' THEN mt.quantity * COALESCE(s.current_price, mt.price)
                             ELSE -mt.quantity * COALESCE(s.current_price, mt.price)
                         END
                     ) as total_stock_value
                 FROM mock_trade mt
-                LEFT JOIN stock_info s ON mt.stock_id = (
-                    SELECT stock_info_id FROM stock_info WHERE code = s.code LIMIT 1
-                )
+                LEFT JOIN stock_info s ON mt.stock_id = s.stock_info_id
                 GROUP BY mt.account_id
                 HAVING SUM(
-                    CASE WHEN mt.trade_type = 'BUY' THEN mt.quantity ELSE -mt.quantity END
+                    CASE WHEN mt.buy_sell = 'BUY' THEN mt.quantity ELSE -mt.quantity END
                 ) > 0
             ) as stock_values
             WHERE accounts.account_id = stock_values.account_id
@@ -174,11 +172,11 @@ public class AssetUpdateScheduler {
             FROM (
                 SELECT 
                     mt.stock_id,
-                    SUM(CASE WHEN mt.trade_type = 'BUY' THEN mt.quantity ELSE -mt.quantity END) as current_quantity
-                FROM mock_trade mt 
+                    SUM(CASE WHEN mt.buy_sell = 'BUY' THEN mt.quantity ELSE -mt.quantity END) as current_quantity
+                FROM mock_trade mt
                 WHERE mt.account_id = ?
                 GROUP BY mt.stock_id
-                HAVING SUM(CASE WHEN mt.trade_type = 'BUY' THEN mt.quantity ELSE -mt.quantity END) > 0
+                HAVING SUM(CASE WHEN mt.buy_sell = 'BUY' THEN mt.quantity ELSE -mt.quantity END) > 0
             ) holdings
             LEFT JOIN stock_info s ON holdings.stock_id = s.stock_info_id
             """;

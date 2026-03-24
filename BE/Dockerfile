@@ -5,8 +5,8 @@ FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 
 # 3. 빌드된 jar 파일 및 Firebase 키 파일 복사
-COPY build/libs/*.jar app.jar
-COPY ../firebaseServiceAccountKey.json firebaseServiceAccountKey.json
+COPY BE/build/libs/*.jar app.jar
+COPY firebaseServiceAccountKey.json firebaseServiceAccountKey.json
 
 # 4. 컨테이너에서 열 포트 지정 (Spring Boot 기본 8080)
 EXPOSE 8080
