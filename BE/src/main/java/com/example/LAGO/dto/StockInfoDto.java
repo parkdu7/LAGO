@@ -10,7 +10,13 @@ public class StockInfoDto {
     private String code;
     private String name;
     private String market;
-
+    private Integer currentPrice;
+    private Integer openPrice;
+    private Integer highPrice;
+    private Integer lowPrice;
+    private Integer closePrice;
+    private Double priceChangeRate;
+    private Long volume;
 
     public StockInfoDto() {}
 
@@ -19,5 +25,13 @@ public class StockInfoDto {
         this.code = stockInfo.getCode();
         this.name = stockInfo.getName();
         this.market = stockInfo.getMarket();
+        this.currentPrice = stockInfo.getCurrentPrice();
+        this.openPrice = stockInfo.getOpenPrice();
+        this.highPrice = stockInfo.getHighPrice();
+        this.lowPrice = stockInfo.getLowPrice();
+        this.closePrice = stockInfo.getClosePrice();
+        this.priceChangeRate = stockInfo.getFluctuationRate() != null ? 
+            ((stockInfo.getCurrentPrice() - stockInfo.getClosePrice()) / (double)stockInfo.getClosePrice() * 100) : null;
+        this.volume = stockInfo.getVolume();
     }
 }
