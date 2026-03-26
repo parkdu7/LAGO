@@ -196,107 +196,32 @@ class GoogleRSSCrawler:
                     logger.debug(f"파라미터에서 URL 추출 성공: {extracted_url[:80]}...")
                     return extracted_url
             
-            # Google News articles URL 패턴 처리
-            if '/articles/' in google_url:
-                # CBMi로 시작하는 base64 인코딩된 URL 찾기
-                import re
-                match = re.search(r'/articles/(CBMi[^?&/]+)', google_url)
-                if match:
-                    try:
-                        import base64
-                        encoded_part = match.group(1)
-                        # CBMi 접두사 제거하고 디코딩
-                        if encoded_part.startswith('CBMi'):
-                            encoded_part = encoded_part[4:]
-                        # base64 패딩 추가
-                        padding = 4 - (len(encoded_part) % 4)
-                        if padding != 4:
-                            encoded_part += '=' * padding
-                        decoded = base64.b64decode(encoded_part).decode('utf-8')
-                        if decoded.startswith('http') and not 'google.com' in decoded:
-                            logger.info(f"✅ base64 URL 디코딩 성공: {decoded[:80]}...")
-                            return decoded
-                    except Exception as e:
-                        logger.debug(f"base64 디코딩 실패: {e}")
-
-            # 방법 2: GET 요청으로 실제 리디렉션 추적 (HEAD보다 효과적)
-            try:
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                }
-                
-                # GET 요청으로 모든 리디렉션 자동 추적
-                response = requests.get(google_url, allow_redirects=True, timeout=10, headers=headers)
-                final_url = response.url
-                
-                # Google 도메인이 아니면 실제 뉴스 사이트 URL
-                if not any(domain in final_url for domain in ['google.com', 'googleadservices.com', 'googlesyndication.com']):
-                    logger.info(f"✅ HTTP GET 리디렉션 성공: {final_url[:80]}...")
-                    return final_url
-                else:
-                    logger.debug(f"여전히 Google 도메인: {final_url[:80]}...")
-            except Exception as e:
-                logger.debug(f"GET 리디렉션 실패: {e}")
-
-            # 방법 3: Selenium을 사용한 JavaScript 기반 리디렉션 (최후의 수단)
-            logger.debug(f"Selenium 리디렉션 시도 시작: {google_url[:80]}...")
-            selenium_url = self.extract_real_url_with_selenium(google_url)
-            if selenium_url:
-                logger.info(f"✅ Selenium 리디렉션 성공: {selenium_url[:80]}...")
-                return selenium_url
-            else:
-                logger.debug("Selenium 리디렉션 실패, HTTP 방식으로 대체")
-                
-            # 방법 3: GET 요청으로 완전한 리디렉션 추적 (Fallback)
-            try:
-                # 실제 브라우저 헤더로 GET 요청
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                }
-                
-                # GET 요청으로 모든 리디렉션 자동 추적
-                response = requests.get(google_url, allow_redirects=True, timeout=15, headers=headers)
-                final_url = response.url
-                
-                logger.debug(f"GET 리디렉션 결과: {google_url[:80]} -> {final_url[:80]}...")
-
-                # Google 도메인이 아니면 실제 뉴스 사이트 URL
-                if not any(domain in final_url for domain in ['google.com', 'googleadservices.com', 'googlesyndication.com']):
-                    logger.info(f"실제 뉴스 URL 추출 성공: {final_url[:80]}...")
-                    return final_url
-                else:
-                    logger.debug(f"여전히 Google 도메인: {final_url[:80]}...")
-
-            except Exception as e:
-                logger.debug(f"GET 리디렉션 실패: {e}")
-
-            # 방법 4: base64 디코딩 시도 (대안)
+            # 방법 1: googlenewsdecoder (protobuf 디코딩 - 2024년 이후 Google 포맷 대응)
             if '/articles/' in google_url:
                 try:
-                    import base64
-                    # URL의 마지막 부분 추출
-                    parts = google_url.split('/')
-                    for part in parts:
-                        if len(part) > 20:  # base64 인코딩된 부분은 보통 길다
-                            try:
-                                decoded = base64.b64decode(part + '==').decode('utf-8')
-                                if decoded.startswith('http') and not 'google.com' in decoded:
-                                    logger.debug(f"base64 디코딩 성공: {decoded[:80]}...")
-                                    return decoded
-                            except:
-                                continue
-                except:
-                    pass
+                    from googlenewsdecoder import new_decoderv1
+                    decoded = new_decoderv1(google_url, interval=5)
+                    if decoded.get("status") and decoded.get("decoded_url"):
+                        real_url = decoded["decoded_url"]
+                        logger.info(f"✅ googlenewsdecoder 성공: {real_url[:80]}...")
+                        return real_url
+                except Exception as e:
+                    logger.debug(f"googlenewsdecoder 실패: {e}")
+
+            # 방법 2: GET 요청으로 리디렉션 추적 (Fallback)
+            try:
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3',
+                }
+                response = requests.get(google_url, allow_redirects=True, timeout=10, headers=headers)
+                final_url = response.url
+                if not any(domain in final_url for domain in ['google.com', 'googleadservices.com']):
+                    logger.info(f"✅ HTTP GET 리디렉션 성공: {final_url[:80]}...")
+                    return final_url
+            except Exception as e:
+                logger.debug(f"GET 리디렉션 실패: {e}")
 
             # 실패하면 원본 반환
             logger.warning(f"실제 URL 추출 실패, 원본 반환: {google_url[:80]}...")

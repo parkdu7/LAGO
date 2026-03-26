@@ -29,21 +29,39 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-lago}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-lago123}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
   finbert:
     build:
-      context: ./Finbert
+      context: ./finbert
       dockerfile: Dockerfile
     container_name: finbert-service
     ports:
       - "5000:8000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  chart-analysis: # New service for chart analysis
+  chart-analysis:
     build:
       context: ./chart_analysis
       dockerfile: Dockerfile
@@ -52,15 +70,15 @@ services:
       - "5001:8000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"] # Updated to internal port 8000
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
 
   backend:
     build:
-      context: ./BE
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: BE/Dockerfile
     container_name: spring-backend
     ports:
       - "8081:9000"
@@ -81,6 +99,12 @@ services:
       - REDIS_STREAM_KEY=${REDIS_STREAM_KEY:-orders-stream}
       - REDIS_STREAM_CONSUMER_GROUP=${REDIS_STREAM_CONSUMER_GROUP:-lago_group}
       - REDIS_STREAM_CONSUMER_NAME=${REDIS_STREAM_CONSUMER_NAME:-lago_consumer}
+
+      # RabbitMQ 연결
+      - SPRING_RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - SPRING_RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER:-lago}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-lago123}
 
       # KIS API (한국투자증권)
       - APP_KEY_A=${APP_KEY_A}
@@ -122,9 +146,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      # finbert:
-      #   condition: service_healthy  # 임시 비활성화
+      rabbitmq:
+        condition: service_healthy
+      finbert:
+        condition: service_healthy
+      chart-analysis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   timescale_data:
+  rabbitmq_data:

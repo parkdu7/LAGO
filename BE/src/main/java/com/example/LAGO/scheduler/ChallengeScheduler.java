@@ -35,7 +35,9 @@ public class ChallengeScheduler {
         // 테스트 및 시연을 위해 24시간으로 변경
 //        if (now.isAfter(startTime) && now.isBefore(endTime)) {
             HistoryChallengeDataResponse latestData = historyChallengeService.getLatestData();
-            messagingTemplate.convertAndSend("/topic/history-challenge", latestData);
+            if (latestData != null) {
+                messagingTemplate.convertAndSend("/topic/history-challenge", latestData);
+            }
 //        }
     }
 }

@@ -38,6 +38,9 @@ public class HistoryChallengeServiceImpl implements HistoryChallengeService {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         HistoryChallengeData latest = historyChallengeDataRepository.findLatestChallengeData(now);
 
+        if (latest == null) {
+            return null;
+        }
         return new HistoryChallengeDataResponse(latest);
     }
 
