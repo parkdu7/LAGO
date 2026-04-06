@@ -162,6 +162,8 @@ docker-compose.override.yml
 # Progress tracking
 PROGRESS.md
 RECOVERY_PLAN.md
+RABBITMQ_PERF.md
+INFRA_ANALYSIS.md
 
 # properties
 .properties

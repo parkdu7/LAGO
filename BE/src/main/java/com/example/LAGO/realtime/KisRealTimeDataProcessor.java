@@ -20,8 +20,9 @@ import java.time.format.DateTimeFormatter;
 @Service
 @Slf4j
 public class KisRealTimeDataProcessor {
-    
+
     private final RealtimeDataService realtimeDataService;
+    private final TickPublisher tickPublisher;
     private final ObjectMapper objectMapper;
     private final RealTimeDataBroadcaster broadcaster;
     // private final RealtimeTradingService realtimeTradingService;  // 서비스 제거됨
@@ -52,9 +53,10 @@ public class KisRealTimeDataProcessor {
     }
 
 
-    public KisRealTimeDataProcessor(RealtimeDataService realtimeDataService, ObjectMapper objectMapper, 
-                                    RealTimeDataBroadcaster broadcaster) {
+    public KisRealTimeDataProcessor(RealtimeDataService realtimeDataService, TickPublisher tickPublisher,
+                                    ObjectMapper objectMapper, RealTimeDataBroadcaster broadcaster) {
         this.realtimeDataService = realtimeDataService;
+        this.tickPublisher = tickPublisher;
         this.objectMapper = objectMapper;
         this.broadcaster = broadcaster;
         // this.realtimeTradingService = realtimeTradingService;  // 서비스 제거됨
@@ -107,10 +109,10 @@ public class KisRealTimeDataProcessor {
      * @param tickData 파싱된 틱 데이터
      */
     private void processTickData(TickData tickData) {
-        // 1. Redis에 실시간 데이터 저장
-        realtimeDataService.saveTickData(tickData);
-        
-        // 2. 실시간 프론트엔드 전송
+        // 1. RabbitMQ 큐에 전달 (비동기 처리)
+        tickPublisher.publish(tickData);
+
+        // 2. 실시간 프론트엔드 전송 (큐와 별개로 즉시 전송)
         broadcaster.sendRealTimeData(tickData);
         
         // 3. 실시간 매매 처리 (AutoTradingBotService로 교체됨)

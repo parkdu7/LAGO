@@ -78,26 +78,25 @@ public class RealtimeDataService {
      * @param tickData KIS 틱 데이터
      */
     public void saveTickData(TickData tickData) {
+        long start = System.nanoTime();
         try {
             if (!tickData.isValid()) {
                 log.warn("Invalid tick data, skipping save: {}", tickData);
                 return;
             }
-            
+
             // 1. 압축 배치 저장 처리
             saveToCompressedBatch(tickData);
-            
+
             // 2. 실시간 조회용 최신 데이터 저장 (기존 방식 유지)
             saveLatestForQuery(tickData);
-
-            // 여기서 실시간 전송
-            broadcaster.sendRealTimeData(tickData);
 
             // stock_info 현재가 갱신 (장외 시간에도 마지막 가격 표시용)
             updateStockInfoPrice(tickData);
 
-            log.debug("Processed tick data: {} - {}", tickData.getCode(), tickData.getClosePrice());
-            
+            long ms = (System.nanoTime() - start) / 1_000_000;
+            log.info("[PERF-AFTER] saveTickData: {}ms | stock={}", ms, tickData.getCode());
+
         } catch (Exception e) {
             log.error("Failed to save tick data: {}", e.getMessage(), e);
         }
