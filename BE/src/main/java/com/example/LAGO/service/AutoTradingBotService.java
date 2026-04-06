@@ -184,12 +184,6 @@ public class AutoTradingBotService {
             
             log.debug("📊 삼성전자 뉴스 {}개 분석, 평균 감정점수: {}", recentNews.size(), averageSentiment);
             
-            // 테스트용: 강제로 높은 감정점수 설정
-            if (!recentNews.isEmpty()) {
-                log.info("🧪 테스트용: 감정점수를 0.8로 강제 설정");
-                return 0.8;
-            }
-            
             return averageSentiment;
             
         } catch (Exception e) {

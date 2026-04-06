@@ -161,6 +161,7 @@ docker-compose.override.yml
 
 # Progress tracking
 PROGRESS.md
+RECOVERY_PLAN.md
 
 # properties
 .properties

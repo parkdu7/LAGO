@@ -1,6 +1,8 @@
 package com.example.LAGO.realtime;
 
+import com.example.LAGO.domain.StockInfo;
 import com.example.LAGO.realtime.dto.TickData;
+import com.example.LAGO.repository.StockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,6 +31,7 @@ public class RealtimeDataService {
     private final StockIdMapper stockIdMapper;
     private static final ZoneId KST = ZoneId.of("Asia/Seoul"); // [NEW]
     private final RealTimeDataBroadcaster broadcaster;
+    private final StockRepository stockRepository;
 
     // (선택) 인덱스 키 상수
     private static final String CHUNK_BLOB_KEY  = "ticks:chunk:%s:blob"; // [NEW]
@@ -42,13 +45,15 @@ public class RealtimeDataService {
             @Qualifier("binaryRedisTemplate") RedisTemplate<String, byte[]> binaryRedisTemplate,
             ObjectMapper objectMapper,
             StockIdMapper stockIdMapper,
-            RealTimeDataBroadcaster broadcaster // 추가
+            RealTimeDataBroadcaster broadcaster,
+            StockRepository stockRepository
     ) {
         this.redisTemplate = redisTemplate;
         this.binaryRedisTemplate = binaryRedisTemplate;
         this.objectMapper = objectMapper;
         this.stockIdMapper = stockIdMapper;
-        this.broadcaster = broadcaster; // 추가
+        this.broadcaster = broadcaster;
+        this.stockRepository = stockRepository;
     }
 
     
@@ -87,7 +92,10 @@ public class RealtimeDataService {
 
             // 여기서 실시간 전송
             broadcaster.sendRealTimeData(tickData);
-            
+
+            // stock_info 현재가 갱신 (장외 시간에도 마지막 가격 표시용)
+            updateStockInfoPrice(tickData);
+
             log.debug("Processed tick data: {} - {}", tickData.getCode(), tickData.getClosePrice());
             
         } catch (Exception e) {
@@ -95,6 +103,36 @@ public class RealtimeDataService {
         }
     }
     
+    // stock_info 갱신 스로틀링 (종목별 마지막 갱신 시각)
+    private final Map<String, Long> lastStockInfoUpdate = new ConcurrentHashMap<>();
+    private static final long STOCK_INFO_UPDATE_INTERVAL_MS = 60_000L; // 1분
+
+    /**
+     * stock_info 테이블의 현재가/시고저/거래량 갱신 (1분 스로틀링)
+     */
+    private void updateStockInfoPrice(TickData tickData) {
+        try {
+            long now = System.currentTimeMillis();
+            Long lastUpdate = lastStockInfoUpdate.get(tickData.getCode());
+            if (lastUpdate != null && now - lastUpdate < STOCK_INFO_UPDATE_INTERVAL_MS) {
+                return; // 아직 갱신 주기 안 됨
+            }
+            lastStockInfoUpdate.put(tickData.getCode(), now);
+
+            stockRepository.findByCode(tickData.getCode()).ifPresent(stock -> {
+                stock.setCurrentPrice(tickData.getClosePrice());
+                stock.setOpenPrice(tickData.getOpenPrice());
+                stock.setHighPrice(tickData.getHighPrice());
+                stock.setLowPrice(tickData.getLowPrice());
+                stock.setClosePrice(tickData.getClosePrice());
+                stock.setVolume(Long.valueOf(tickData.getVolume()));
+                stockRepository.save(stock);
+            });
+        } catch (Exception e) {
+            log.warn("stock_info 가격 갱신 실패: {}", e.getMessage());
+        }
+    }
+
     /**
      * 압축 배치 저장 처리
      * @param tickData 틱 데이터

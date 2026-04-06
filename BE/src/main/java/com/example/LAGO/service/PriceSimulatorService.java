@@ -136,11 +136,11 @@ public class PriceSimulatorService {
      */
     private void insertTicksData(PriceData priceData) {
         String sql = """
-            INSERT INTO ticks (ts, code, open_price, high_price, low_price, close_price, volume) 
-            VALUES (NOW(), ?, ?, ?, ?, ?, ?)
+            INSERT INTO ticks (ts, stock_info_id, open_price, high_price, low_price, close_price, volume)
+            VALUES (NOW(), (SELECT stock_info_id FROM stock_info WHERE code = ?), ?, ?, ?, ?, ?)
         """;
-        
-        jdbcTemplate.update(sql, 
+
+        jdbcTemplate.update(sql,
             SAMSUNG_STOCK_CODE,
             priceData.openPrice,
             priceData.highPrice,

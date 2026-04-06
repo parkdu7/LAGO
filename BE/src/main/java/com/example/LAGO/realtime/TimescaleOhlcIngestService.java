@@ -33,17 +33,16 @@ public class TimescaleOhlcIngestService {
     private final JdbcTemplate jdbc;
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
-    // 대문자 테이블명은 반드시 쌍따옴표
     private static final String UPSERT_SQL = """
-        INSERT INTO "TICKS"
+        INSERT INTO ticks
             (stock_info_id, ts, open_price, high_price, low_price, close_price, volume)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (stock_info_id, ts) DO UPDATE SET
-            open_price  = COALESCE("TICKS".open_price, EXCLUDED.open_price),
-            high_price  = GREATEST(COALESCE("TICKS".high_price, EXCLUDED.high_price), EXCLUDED.high_price),
-            low_price   = LEAST(COALESCE("TICKS".low_price, EXCLUDED.low_price), EXCLUDED.low_price),
+            open_price  = COALESCE(ticks.open_price, EXCLUDED.open_price),
+            high_price  = GREATEST(COALESCE(ticks.high_price, EXCLUDED.high_price), EXCLUDED.high_price),
+            low_price   = LEAST(COALESCE(ticks.low_price, EXCLUDED.low_price), EXCLUDED.low_price),
             close_price = EXCLUDED.close_price,
-            volume      = COALESCE("TICKS".volume, 0) + COALESCE(EXCLUDED.volume, 0)
+            volume      = COALESCE(ticks.volume, 0) + COALESCE(EXCLUDED.volume, 0)
         """;
 
     /**

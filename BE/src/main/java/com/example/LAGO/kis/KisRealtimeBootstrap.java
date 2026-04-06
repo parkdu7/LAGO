@@ -30,8 +30,10 @@ public class KisRealtimeBootstrap {
             // 실제 필요한 종목만 수집 (DB 전체 구독 대신)
             Set<String> requiredStocks = new LinkedHashSet<>();
 
-            // 1) AI 봇 거래 대상 (삼성전자)
-            requiredStocks.add("005930");
+            // 1) 주요 거래 대상 종목
+            requiredStocks.add("005930"); // 삼성전자
+            requiredStocks.add("000660"); // SK하이닉스
+            requiredStocks.add("035720"); // 카카오
 
             // 2) 사용자 관심종목
             try {
@@ -40,7 +42,7 @@ public class KisRealtimeBootstrap {
                     requiredStocks.add(w.getStock().getCode());
                 }
             } catch (Exception e) {
-                log.warn("[KIS] Failed to load watchlist, proceeding with bot stocks only: {}", e.getMessage());
+                log.warn("[KIS] Failed to load watchlist, proceeding with default stocks only: {}", e.getMessage());
             }
 
             log.info("[KIS] Subscribing to {} active stocks (max 40): {}", requiredStocks.size(), requiredStocks);

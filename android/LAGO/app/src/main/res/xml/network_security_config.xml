@@ -7,7 +7,10 @@
         <domain includeSubdomains="false">127.0.0.1</domain>
         <!-- 실제 디바이스용 IP 추가 -->
         <domain includeSubdomains="false">211.107.153.145</domain>
-        <domain includeSubdomains="false">192.168.219.134</domain>  <!-- 현재 사용 중인 IP -->
+        <domain includeSubdomains="false">192.168.219.134</domain>
+        <domain includeSubdomains="false">121.168.112.146</domain>  <!-- 이전 서버 공인 IP -->
+        <domain includeSubdomains="false">222.98.96.98</domain>  <!-- 현재 서버 공인 IP -->
+        <domain includeSubdomains="false">192.168.0.2</domain>  <!-- 현재 서버 내부 IP -->
     </domain-config>
     
     <!-- EC2 운영 서버 HTTP 허용 (개발/테스트용) -->
