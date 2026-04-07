@@ -1,15 +1,18 @@
-# 1. Java 21 (최신 LTS) 공식 경량 이미지 사용
-FROM eclipse-temurin:21-jdk-jammy
-
-# 2. 컨테이너 내 작업 폴더 지정
+# 1단계: Gradle 빌드
+FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /app
+COPY BE/gradlew BE/gradlew
+COPY BE/gradle BE/gradle
+COPY BE/build.gradle BE/build.gradle
+COPY BE/settings.gradle BE/settings.gradle
+RUN chmod +x BE/gradlew && cd BE && ./gradlew dependencies --no-daemon -q || true
+COPY BE/src BE/src
+RUN cd BE && ./gradlew clean build -x test --no-daemon
 
-# 3. 빌드된 jar 파일 및 Firebase 키 파일 복사
-COPY BE/build/libs/*.jar app.jar
+# 2단계: 실행
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+COPY --from=builder /app/BE/build/libs/*.jar app.jar
 COPY firebaseServiceAccountKey.json firebaseServiceAccountKey.json
-
-# 4. 컨테이너에서 열 포트 지정 (Spring Boot 기본 8080)
 EXPOSE 8080
-
-# 5. 컨테이너 실행 시 명령
 ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=200", "-jar", "app.jar"]
