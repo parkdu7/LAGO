@@ -103,6 +103,7 @@ class SmartStockWebSocketService @Inject constructor(
                                     Log.d(TAG, "Smart WebSocket connection closed")
                                     this@SmartStockWebSocketService.isConnected = false
                                     _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                                    scheduleReconnection()
                                 }
                                 ua.naiksoftware.stomp.dto.LifecycleEvent.Type.ERROR -> {
                                     Log.e(TAG, "Smart WebSocket connection error", lifecycleEvent.exception)

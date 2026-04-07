@@ -605,6 +605,9 @@ class ChartViewModel @Inject constructor(
                 )
             }
 
+            // 차트 데이터를 주식정보 API와 동시에 즉시 로드
+            launch { loadChartDataWithInterval(stockCode, _uiState.value.config.timeFrame) }
+
             // 주식 정보 캐시 확인
             val cachedStockInfo = chartCacheDao.getCachedStockInfo(stockCode)
             if (cachedStockInfo != null) {
